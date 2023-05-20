@@ -43,7 +43,7 @@ def part2_overfit_hp():
     wstd, lr, reg = 0, 0, 0
     # TODO: Tweak the hyperparameters until you overfit the small dataset.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    wstd, lr, reg = 0.5, 0.05, 0
     # ========================
     return dict(wstd=wstd, lr=lr, reg=reg)
 
@@ -60,7 +60,11 @@ def part2_optim_hp():
     # TODO: Tweak the hyperparameters to get the best results you can.
     # You may want to use different learning rates for each optimizer.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    wstd = 0.1;
+    lr_vanilla = 0.002
+    lr_momentum = 0.003
+    lr_rmsprop = 0.00015
+    reg = 0.001
     # ========================
     return dict(
         wstd=wstd,
@@ -79,7 +83,8 @@ def part2_dropout_hp():
     # TODO: Tweak the hyperparameters to get the model to overfit without
     # dropout.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    wstd = 0.1
+    lr =  0.002
     # ========================
     return dict(wstd=wstd, lr=lr)
 
