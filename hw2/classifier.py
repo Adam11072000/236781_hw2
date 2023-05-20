@@ -22,7 +22,6 @@ class Classifier(nn.Module, ABC):
 
         # TODO: Add any additional initializations here, if you need them.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
         # ========================
 
     def forward(self, x: Tensor) -> Tensor:
@@ -34,7 +33,7 @@ class Classifier(nn.Module, ABC):
 
         # TODO: Implement the forward pass, returning raw scores from the wrapped model.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        z = self.model(x)
         # ========================
         assert z.shape[0] == x.shape[0] and z.ndim == 2, "raw scores should be (N, C)"
         return z
@@ -47,7 +46,7 @@ class Classifier(nn.Module, ABC):
         """
         # TODO: Calcualtes class scores for each sample.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        z = self.forward(x)
         # ========================
         return self.predict_proba_scores(z)
 
@@ -59,7 +58,7 @@ class Classifier(nn.Module, ABC):
         """
         # TODO: Calculate class probabilities for the input.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return torch.softmax(z, dim=1)
         # ========================
 
     def classify(self, x: Tensor) -> Tensor:
@@ -68,18 +67,18 @@ class Classifier(nn.Module, ABC):
         :returns: (N,) tensor of type torch.int containing predicted class labels.
         """
         # Calculate the class probabilities
-        y_proba = self.predict_proba(x)
+        y_prob = self.predict_proba(x)
         # Use implementation-specific helper to assign a class based on the
         # probabilities.
-        return self._classify(y_proba)
+        return self._classify(y_prob)
 
     def classify_scores(self, z: Tensor) -> Tensor:
         """
         :param z: (N, C) scores tensor, e.g. calculated by this model.
         :returns: (N,) tensor of type torch.int containing predicted class labels.
         """
-        y_proba = self.predict_proba_scores(z)
-        return self._classify(y_proba)
+        y_prob = self.predict_proba_scores(z)
+        return self._classify(y_prob)
 
     @abstractmethod
     def _classify(self, y_proba: Tensor) -> Tensor:
@@ -96,7 +95,8 @@ class ArgMaxClassifier(Classifier):
         #  Classify each sample to one of C classes based on the highest score.
         #  Output should be a (N,) integer tensor.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        _, y_pred = torch.max(y_proba, dim=1)
+        return y_pred
         # ========================
 
 
@@ -128,7 +128,8 @@ class BinaryClassifier(Classifier):
         #  greater or equal to the threshold.
         #  Output should be a (N,) integer tensor.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred = (y_proba[:, self.positive_class] >= self.threshold).int()
+        return y_pred
         # ========================
 
 
@@ -177,7 +178,29 @@ def plot_decision_boundary_2d(
     #  plot a contour map.
     x1_grid, x2_grid, y_hat = None, None, None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+     # Plot the data
+    ax.scatter(
+        x[:, 0].numpy(),
+        x[:, 1].numpy(),
+        c=y.numpy(),
+        s=20,
+        alpha=0.8,
+        edgecolor="k",
+        cmap=cmap,
+    )
+
+    # Construct the decision boundary.
+    # Use torch.meshgrid() to create the grid (x1_grid, x2_grid) with step dx on which
+    # you evaluate the classifier.
+    # The classifier predictions (y_hat) will be treated as values for which we'll
+    # plot a contour map.
+    x1_range = torch.arange(x[:, 0].min(), x[:, 0].max(), dx)
+    x2_range = torch.arange(x[:, 1].min(), x[:, 1].max(), dx)
+    x1_grid, x2_grid = torch.meshgrid(x1_range, x2_range)
+
+    # Classifier's prediction
+    x_grid = torch.stack([x1_grid.reshape(-1), x2_grid.reshape(-1)], dim=1)
+    y_hat = classifier.classify(x_grid).reshape(x1_grid.shape)
     # ========================
 
     # Plot the decision boundary as a filled contour
@@ -209,19 +232,26 @@ def select_roc_thresh(
     #  Calculate the index of the optimal threshold as optimal_thresh_idx.
     #  Calculate the optimal threshold as optimal_thresh.
     fpr, tpr, thresh = None, None, None
-    optimal_theresh_idx, optimal_thresh = None, None
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    optimal_idx, best_thresh = None, None
+    # Calculate the class probabilities
+    y_score = classifier.predict_proba(x)[:, 1].numpy()
+    
+    # Compute ROC curve
+    fpr, tpr, thresh = roc_curve(y.numpy(), y_score)
+    
+    # Calculate the index of the optimal threshold as optimal_thresh_idx.
+    optimal_idx = np.argmax(tpr - fpr)
+    best_thresh = thresh[optimal_idx]
     # ========================
 
     if plot:
         fig, ax = plt.subplots(1, 1, figsize=(6, 4))
         ax.plot(fpr, tpr, color="C0")
         ax.scatter(
-            fpr[optimal_thresh_idx], tpr[optimal_thresh_idx], color="C1", marker="o"
+            fpr[optimal_idx], tpr[optimal_idx], color="C1", marker="o"
         )
         ax.set_xlabel("FPR")
         ax.set_ylabel("TPR=1-FNR")
-        ax.legend(["ROC", f"Threshold={optimal_thresh:.2f}"])
+        ax.legend(["ROC", f"Threshold={best_thresh:.2f}"])
 
-    return optimal_thresh
+    return best_thresh
