@@ -39,20 +39,23 @@ class MLP(nn.Module):
         self.in_dim = in_dim
         self.out_dim = dims[-1]
 
-        self.layers = nn.ModuleList()
-        self.activations = nn.ModuleList()
-
+        
+        layers = []
+        activations = []
         prev_dim = in_dim
         for dim, nonlin in zip(dims, nonlins):
-            self.layers.append(nn.Linear(prev_dim, dim))
+            layers.append(nn.Linear(prev_dim, dim))
             if isinstance(nonlin, str):
                 activation = ACTIVATIONS[nonlin](**ACTIVATION_DEFAULT_KWARGS[nonlin])
             elif isinstance(nonlin, nn.Module):
                 activation = nonlin
             else:
                 raise ValueError(f"Unknown activation function: {nonlin}")
-            self.activations.append(activation)
+            activations.append(activation)
             prev_dim = dim
+        
+        self.layers = nn.ModuleList(layers)
+        self.activations = nn.ModuleList(activations)
 
     def forward(self, x: Tensor) -> Tensor:
         for layer, activation in zip(self.layers, self.activations):

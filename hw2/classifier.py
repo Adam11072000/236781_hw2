@@ -234,7 +234,8 @@ def select_roc_thresh(
     fpr, tpr, thresh = None, None, None
     optimal_idx, best_thresh = None, None
     # Calculate the class probabilities
-    y_score = classifier.predict_proba(x)[:, 1].numpy()
+    import numpy as np
+    y_score = classifier.predict_proba(x)[:, 1].detach().numpy()
     
     # Compute ROC curve
     fpr, tpr, thresh = roc_curve(y.numpy(), y_score)

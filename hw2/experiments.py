@@ -45,9 +45,27 @@ def mlp_experiment(
     #  Note: use print_every=0, verbose=False, plot=False where relevant to prevent
     #  output from this function.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    # Create a BinaryClassifier model.
+    model = BinaryClassifier(depth, width)
+
+    # Create a ClassifierTrainer
+    class_trainer = ClassifierTrainer(model, dl_train)
+
+    # Train using our ClassifierTrainer for n_epochs, while validating on the validation set.
+    for _ in range(n_epochs):
+        class_trainer.train(dl_train)
+        valid_accuracy = class_trainer.validate(dl_valid)
+    
+    # Use the validation set for threshold selection.
+    y_pred, y_true = class_trainer.predict(dl_valid)
+    optimal_thresh = select_roc_thresh(y_true, y_pred)
+
+    # Set optimal threshold and evaluate one epoch on the test set.
+    class_trainer.set_threshold(optimal_thresh)
+    test_accuracy = class_trainer.evaluate(dl_test)
+    
     # ========================
-    return model, thresh, valid_acc, test_acc
+    return model, optimal_thresh, valid_accuracy, test_accuracy
 
 
 def cnn_experiment(

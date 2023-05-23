@@ -82,12 +82,12 @@ class CNN(nn.Module):
         overall_dims = [in_channels, *self.channels]
         activation_func = ACTIVATIONS[self.activation_type]
         pooling = POOLINGS[self.pooling_type]
-        number_of_convs = 0
+        number_of_convs = 0 
         for in_dim, out_dim in zip(overall_dims[:-1], overall_dims[1:]):
             layers.append(nn.Conv2d(in_dim, out_dim, **self.conv_params))
             layers.append(activation_func(**self.activation_params))
             number_of_convs += 1
-            if number_of_convs % self.pool_every == 0 and number_of_convs < len(overall_dims) - 1:
+            if number_of_convs % self.pool_every == 0 and number_of_convs < len(overall_dims):
                 layers.append(pooling(**self.pooling_params))
 
         # ========================
@@ -109,23 +109,22 @@ class CNN(nn.Module):
             torch.set_rng_state(rng_state)
 
     def _make_mlp(self):
-        # Extract number of features from the feature extractor
+        # TODO:
+        #  - Create the MLP part of the model: (FC -> ACT)*M -> Linear
+        #  - Use the the MLP implementation from Part 1.
+        #  - The first Linear layer should have an input dim of equal to the number of
+        #    convolutional features extracted by the convolutional layers.
+        #  - The last Linear layer should have an output dim of out_classes.
+        mlp: MLP = None
+        # ====== YOUR CODE: ======
         n_features = self._n_features()
-
-        # Define the activation function
-        activation_func = self.activation_type
-
-        # Define dimensions including the output classes
+        activation_func = ACTIVATIONS[self.activation_type](**self.activation_params)
         dims = [*self.hidden_dims, self.out_classes]
-
-        # Define the non-linearities (activations)
-        nonlins = [activation_func for _ in dims]
-
-        # Initialize MLP with the appropriate parameters
-        mlp = MLP(in_dim=n_features, dims=dims, nonlins=nonlins)
-
+        activation_funcs = [activation_func] * len(self.hidden_dims)
+        activation_funcs.append("none") 
+        mlp = MLP(in_dim=n_features, dims=dims, nonlins=activation_funcs)
+         # ========================
         return mlp
-
 
     def forward(self, x: Tensor):
         # TODO: Implement the forward pass.
@@ -198,9 +197,9 @@ class ResidualBlock(nn.Module):
         overall_channels = [in_channels] + channels[:]
         layers = []
         for i in range(len(kernel_sizes)):
+            curr_kernel = kernel_sizes[i]
             out_chnls = overall_channels[i + 1]
             in_chnls = overall_channels[i]
-            curr_kernel = kernel_sizes[i]
             layers.append(nn.Conv2d(in_chnls, out_chnls, kernel_size=curr_kernel, bias=True, padding=curr_kernel // 2))
             if i == len(kernel_sizes) - 1:
                 break
@@ -208,7 +207,8 @@ class ResidualBlock(nn.Module):
                 layers.append(nn.Dropout2d(dropout))
             if batchnorm:
                 layers.append(nn.BatchNorm2d(out_chnls))
-            layers.append(activation_func)
+            layers.append(activation_func(**activation_params))
+        
         self.main_path = nn.Sequential(*layers)
 
         short_layers = []
@@ -318,18 +318,33 @@ class ResNet(CNN):
         # ====== YOUR CODE: ======
         pooling = POOLINGS[self.pooling_type]
         number_of_poolings = int(len(self.channels) / self.pool_every)
-        overall_dims = [in_channels, *self.channels]
-        remains = len(self.channels) % self.pool_every
-        number_of_pools = 0
-        for i in range(number_of_poolings):
-            layers.append(ResidualBlock(overall_dims[i * self.pool_every],
-                              overall_dims[i * self.pool_every + 1:(i + 1) * self.pool_every + 1],
-                              [3]*self.pool_every,self.batchnorm, self.dropout,self.activation_type,
-                              self.activation_params ))
-            layers.append(pooling(**self.pooling_params))
-        if remains:
-            layers.append(ResidualBlock(overall_dims[ - remains -1], overall_dims[ - remains:], [3]*remains,self.batchnorm,
-                                self.dropout,self.activation_type, self.activation_params))
+        for i in range(0, number_of_poolings + 1):
+            curr_channel = i * self.pool_every
+            next_channel = (curr_channel+self.pool_every) % len(self.channels)
+            if next_channel < self.pool_every:
+                next_channel = len(self.channels)
+            res_block_channels = self.channels[curr_channel:next_channel]
+            res_block_kernels = [3]*len(res_block_channels)
+            if len(res_block_channels) == 0 or len(res_block_kernels) == 0:
+                break
+            if not self.bottleneck or not in_channels == res_block_channels[0]:
+                block = ResidualBlock(in_channels, 
+                                      res_block_channels, res_block_kernels, 
+                                      self.batchnorm, self.dropout,
+                                     self.activation_type,
+                                     self.activation_params)
+            else:
+                block = ResidualBottleneckBlock(in_channels, 
+                                                res_block_channels[1:-1],
+                                                res_block_kernels[1:-1], 
+                                                batchnorm=self.batchnorm, 
+                                                dropout=self.dropout, 
+                                                activation_type=self.activation_type, 
+                                                activation_params=self.activation_params)                  
+            in_channels = res_block_channels[-1]
+            layers += [block]
+            if next_channel - curr_channel == self.pool_every:
+                layers += [pooling(**self.pooling_params)]
         # ========================
         seq = nn.Sequential(*layers)
         return seq
