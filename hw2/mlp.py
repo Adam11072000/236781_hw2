@@ -14,7 +14,6 @@ ACTIVATIONS = {
     None: nn.Identity,
 }
 
-
 # Default keyword arguments to pass to activation class constructors, e.g.
 # activation_cls(**ACTIVATION_DEFAULT_KWARGS[name])
 ACTIVATION_DEFAULT_KWARGS = defaultdict(
@@ -35,36 +34,27 @@ class MLP(nn.Module):
     def __init__(
         self, in_dim: int, dims: Sequence[int], nonlins: Sequence[Union[str, nn.Module]]
     ):
-        """
-        :param in_dim: Input dimension.
-        :param dims: Hidden dimensions, including output dimension.
-        :param nonlins: Non-linearities to apply after each one of the hidden
-            dimensions.
-            Can be either a sequence of strings which are keys in the ACTIVATIONS
-            dict, or instances of nn.Module (e.g. an instance of nn.ReLU()).
-            Length should match 'dims'.
-        """
+        super().__init__()
         assert len(nonlins) == len(dims)
         self.in_dim = in_dim
         self.out_dim = dims[-1]
 
-        # TODO:
-        #  - Initialize the layers according to the requested dimensions. Use
-        #    either nn.Linear layers or create W, b tensors per layer and wrap them
-        #    with nn.Parameter.
-        #  - Either instantiate the activations based on their name or use the provided
-        #    instances.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        self.layers = nn.ModuleList()
+        self.activations = nn.ModuleList()
+
+        prev_dim = in_dim
+        for dim, nonlin in zip(dims, nonlins):
+            self.layers.append(nn.Linear(prev_dim, dim))
+            if isinstance(nonlin, str):
+                activation = ACTIVATIONS[nonlin](**ACTIVATION_DEFAULT_KWARGS[nonlin])
+            elif isinstance(nonlin, nn.Module):
+                activation = nonlin
+            else:
+                raise ValueError(f"Unknown activation function: {nonlin}")
+            self.activations.append(activation)
+            prev_dim = dim
 
     def forward(self, x: Tensor) -> Tensor:
-        """
-        :param x: An input tensor, of shape (N, D) containing N samples with D features.
-        :return: An output tensor of shape (N, D_out) where D_out is the output dim.
-        """
-        # TODO: Implement the model's forward pass. Make sure the input and output
-        #  shapes are as expected.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        for layer, activation in zip(self.layers, self.activations):
+            x = activation(layer(x))
+        return x

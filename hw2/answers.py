@@ -60,7 +60,7 @@ def part2_optim_hp():
     # TODO: Tweak the hyperparameters to get the best results you can.
     # You may want to use different learning rates for each optimizer.
     # ====== YOUR CODE: ======
-    wstd = 0.1;
+    wstd = 0.1
     lr_vanilla = 0.002
     lr_momentum = 0.003
     lr_rmsprop = 0.00015
@@ -249,8 +249,11 @@ def part4_optim_hp():
     #  - Choose the appropriate loss function for your architecture.
     #    What you returns needs to be a callable, so either an instance of one of the
     #    Loss classes in torch.nn or one of the loss functions from torch.nn.functional.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    # ====== YOUR CODE: ===== 
+    loss_fn = torch.nn.CrossEntropyLoss()
+    lr = 0.00275
+    weight_decay = 0.00005
+    momentum = 0.9
     # ========================
     return dict(lr=lr, weight_decay=weight_decay, momentum=momentum, loss_fn=loss_fn)
 

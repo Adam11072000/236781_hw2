@@ -27,6 +27,7 @@ class Trainer(abc.ABC):
     def __init__(
         self,
         model: nn.Module,
+        loss_func,
         device: Optional[torch.device] = None,
     ):
         """
@@ -36,6 +37,7 @@ class Trainer(abc.ABC):
         """
         self.model = model
         self.device = device
+        self.loss_fn = loss_func
 
         if self.device:
             model.to(self.device)
@@ -171,12 +173,12 @@ class Trainer(abc.ABC):
         if verbose:
             print(message)
 
-    @staticmethod
     def _foreach_batch(
+        self,
         dl: DataLoader,
         forward_fn: Callable[[Any], BatchResult],
-        verbose=True,
         max_batches=None,
+        verbose=True,
     ) -> EpochResult:
         """
         Evaluates the given forward-function on batches from the given
@@ -245,9 +247,8 @@ class ClassifierTrainer(Trainer):
         :param optimizer: The optimizer to train with.
         :param device: torch.device to run training on (CPU or GPU).
         """
-        super().__init__(model, device)
+        super().__init__(model, loss_fn, device)
         self.optimizer = optimizer
-        self.loss_fn = loss_fn
 
     def train_batch(self, batch) -> BatchResult:
         X, y = batch
@@ -265,7 +266,14 @@ class ClassifierTrainer(Trainer):
         #  - Update parameters
         #  - Classify and calculate number of correct predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.optimizer.zero_grad()
+        out = self.model.forward(X)
+        loss = self.loss_fn.forward(out, y)
+        loss.backward()
+        batch_loss = loss.item()
+        self.optimizer.step()
+
+        loss, num_correct = self.test_batch(batch)
         # ========================
 
         return BatchResult(batch_loss, num_correct)
@@ -285,7 +293,9 @@ class ClassifierTrainer(Trainer):
             #  - Forward pass
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            prediction = self.model.forward(X)
+            batch_loss = self.loss_fn(prediction, y).item()
+            num_correct = torch.sum(torch.eq(prediction.argmax(dim=1),y)).item()
             # ========================
 
         return BatchResult(batch_loss, num_correct)
@@ -314,8 +324,8 @@ class LayerTrainer(Trainer):
         self.optimizer.zero_grad()
         out = self.model.forward(X)
         loss = self.loss_fn.forward(out,y)
-        g_loss = self.loss_fn.backward(loss)
-        backward = self.model.backward(g_loss)
+        gradient_loss = loss.backward(loss)
+        _ = self.model.backward(gradient_loss)
         self.optimizer.step()
         y_hat = out.argmax(dim=1)
         num_correct = torch.sum(y_hat - y == 0)       
