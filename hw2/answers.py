@@ -155,9 +155,9 @@ def part3_arch_hp():
     out_activation = "none"  # activation function to apply at the output layer
     # TODO: Tweak the MLP architecture hyperparameters.
     # ====== YOUR CODE: ======
-    n_layers = 2
+    n_layers = 4
     hidden_dims = 15
-    activation = "relu"
+    activation = "lrelu"
     out_activation = "tanh"
     # ========================
     return dict(

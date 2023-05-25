@@ -45,27 +45,34 @@ def mlp_experiment(
     #  Note: use print_every=0, verbose=False, plot=False where relevant to prevent
     #  output from this function.
     # ====== YOUR CODE: ======
-    # Create a BinaryClassifier model.
-    model = BinaryClassifier(depth, width)
+    b_classifier, optimal_thresh, valid_accuracy, test_accuracy = None, None, None, None
+    activation_func = torch.nn.LeakyReLU(0.01)
+    out_activation = "sigmoid"
+    loss_func = torch.nn.CrossEntropyLoss()
+    dims = [*[width,]*depth, 2]
+    lr, weight_decay = 0.00125, 0.0006
+    nonlins = [*[activation_func,]*depth, out_activation]
+    mlp = MLP(
+        in_dim=2,
+        dims=dims,
+        nonlins=nonlins
+    )
+    b_classifier = BinaryClassifier(
+        model=mlp,
+        threshold=0.7
+    )
+    optimizer = torch.optim.Adam(params=b_classifier.parameters(),
+                                  **{"lr": lr, "weight_decay": weight_decay, "betas": (0.1, 0.98)})
+    trainer = ClassifierTrainer(b_classifier, loss_func, optimizer)
 
-    # Create a ClassifierTrainer
-    class_trainer = ClassifierTrainer(model, dl_train)
+    res = trainer.fit(dl_train=dl_train, dl_test=dl_valid, num_epochs=n_epochs, print_every=0, early_stopping=3)
+    optimal_thresh = select_roc_thresh(b_classifier, *dl_valid.dataset.tensors, plot=False)
+    valid_accuracy = res.test_acc[-1]
 
-    # Train using our ClassifierTrainer for n_epochs, while validating on the validation set.
-    for _ in range(n_epochs):
-        class_trainer.train(dl_train)
-        valid_accuracy = class_trainer.validate(dl_valid)
-    
-    # Use the validation set for threshold selection.
-    y_pred, y_true = class_trainer.predict(dl_valid)
-    optimal_thresh = select_roc_thresh(y_true, y_pred)
-
-    # Set optimal threshold and evaluate one epoch on the test set.
-    class_trainer.set_threshold(optimal_thresh)
-    test_accuracy = class_trainer.evaluate(dl_test)
-    
+    b_classifier.threshold = optimal_thresh
+    epoch_res = trainer.test_epoch(dl_test)
     # ========================
-    return model, optimal_thresh, valid_accuracy, test_accuracy
+    return b_classifier, optimal_thresh, valid_accuracy, epoch_res.accuracy
 
 
 def cnn_experiment(
