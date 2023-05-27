@@ -323,12 +323,12 @@ class LayerTrainer(Trainer):
         # ====== YOUR CODE: ======
         self.optimizer.zero_grad()
         out = self.model.forward(X)
-        loss = self.loss_fn.forward(out,y)
-        gradient_loss = loss.backward(loss)
-        _ = self.model.backward(gradient_loss)
+        loss = self.loss_fn(out,y)
+        gradient_loss = self.loss_fn.backward(loss)
+        back = self.model.backward(gradient_loss)
         self.optimizer.step()
         y_hat = out.argmax(dim=1)
-        num_correct = torch.sum(y_hat - y == 0)       
+        num_correct = torch.sum(y_hat - y == 0)            
         # ========================
 
         return BatchResult(loss, num_correct)

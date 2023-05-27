@@ -9,7 +9,16 @@ math (delimited with $$).
 # Part 1 (Backprop) answers
 
 part1_q1 = r"""
-**Your answer:**
+1.
+  a.For a singular output we need "in_features"*"out_features"*"Num_of_samples", in our case that is 
+  1024*512*64.Therefore for all the output samples (64) we get 1024*512*64*64.
+  b.In our case the Jacobian matrix is not sparse. Considering every output elements is affected by all input
+  elements (because the graph is fully connected) it is not possible to get a sprase matrix unless all the 
+  elements are zero.
+  c.we do not need to materialize the above Jacobian in order to calculate the downstream gratdient w.r.t. to 
+    the input, to do that we need to Transpose W to have appropriate dimensions for dy/dx, then we 
+    perform dy/dx * W_transpose. The result will have the same dimensions as the input tensor.
+    
 
 
 Write your answer using **markdown** and $\LaTeX$:
@@ -22,7 +31,17 @@ An equation: $e^{i\pi} -1 = 0$
 """
 
 part1_q2 = r"""
-**Your answer:**
+2.
+  a.In this case considering the Jacobian is with respect to W, it will have the same dimension as the weight
+    tensor,therefore it will be 512*1024.
+  b.In this case the Jacobian matrix IS sparse,that is due to the fact that the output is affected only by 
+    the weights.To be more preciese each output element in y depends on the corresponding row of w.
+    Therefore, for a given row in W, all elements except the ones in that row will be zero in
+    the Jacobian dy/dw. 
+  c.again there is no need to materialize, to do that we need to transpose X, then we calculate 
+    x_transpose*dy/dx, as mentioned above the result will have the same dimensions as the input.
+ 
+
 
 
 Write your answer using **markdown** and $\LaTeX$:
@@ -91,6 +110,9 @@ def part2_dropout_hp():
 
 part2_q1 = r"""
 **Your answer:**
+Yes, the results do meet our expectations, as we can see from the results (the epochs) the accuracy when going over the train set is highest when
+the dropout value is zero, followed by 0.4 and lastly 0.8, that is due to picking the hyperparameters in way that gives is higher overfitting with lower dropout values, we can also see that using dropout regularization gives us higher test set accuracy although that is achieved by the later epochs as expected.
+
 
 
 Write your answer using **markdown** and $\LaTeX$:
@@ -104,7 +126,11 @@ An equation: $e^{i\pi} -1 = 0$
 
 part2_q2 = r"""
 **Your answer:**
-
+Yes that is possible.
+The cross entropy loss takes into account all the probabilities' distributions, therefore the train loss depends on all the scores of each class.
+On the other hand the prediction is the highest scoring class.
+Given the following scenario we can see an increase in both the test loss and accuracy:
+Suppose in a given epoch (not the first one) the number of correct prediction increased from the previous one, and the scores of the highest scoring class do not differ from the other classes (which did not happen before considering we have highest scoring class) the accuracy will increase (better predictions) and so will the loss.
 
 Write your answer using **markdown** and $\LaTeX$:
 ```python
@@ -117,6 +143,25 @@ An equation: $e^{i\pi} -1 = 0$
 
 part2_q3 = r"""
 **Your answer:**
+1. Gradient descent is an optimization algorithm used to update parameters,on the other hand backpropagation is the algorithm used to calculate the gradients needed for parameter updates in neural networks.
+2. We will firstly go over the differnces quickly then we will go into detail about each comparable attribute.
+Gradient descnet updates parameters based on the average gradient over the entire training dataset.
+Stochastic gradient descent updates parameters using the gradient computed for a single training example at a time.
+Time Complexity:
+Regular GD requires much more time to run compared to SGD that is due to the fact that SGD computes the gradient for a singular training example at a given moment while GD calculates all the gradients for all the training set, making it significantlly slower when using larger batches of training sets.
+this also affects the time needed for the algorithm to converge, GD takes more time to converge while SGD takes less time.
+Bias,Variance and Generalization:
+GD goes over the entire dataset therefore it provides a smoother therefore having less bias, while on the other hand SGD calculates over a singular example therefore it may have more bias and noise.
+Adding to that logic, GD has better generalizaiton due to the fact that it takes all the data set therefore having a broader range of calculations in contrast to SGD which does does not share ability.
+Updating:
+In GD we update using the average gradient over all the dataset, on the other hand in SGD we update using a single training example iteratively.
+3. To put it shortly, we can take the "Time Complexity" from above because we strive for faster computations and more effecient computing, moreover the noise we talked about in the second point which is added from taking into account a singular training example each time, acts as a regularization term which will prevent us from creating an overfitting model.
+4.
+A. 
+In our opinion the suggested method does not produce an equivalent to regular GD on all the data, the main difference here is that GD works on all the data, meaning the gradiant in a singular epoch is calculated using an average of all the data in hand, the suggested method does an independent calculation on every batch then calculates the loss using the information exclusive to that batch then we do the backward pass. Mathematically summing then performing backward pass is the same as optimizing the sum of batches, however the difference lies in the optimization, where optimizing the losses compared to optimizing the sum.
+In GD the gradient is with respect to the AVG loss over all the dataset, while in our case the respect is to the sum of losses of all batches.
+B.
+The more proccesing we do to batches the more memory will be used and piled up, this may be cause by all the secondary calculations that need to be done and stored for future use between the batches.
 
 
 Write your answer using **markdown** and $\LaTeX$:
@@ -155,10 +200,10 @@ def part3_arch_hp():
     out_activation = "none"  # activation function to apply at the output layer
     # TODO: Tweak the MLP architecture hyperparameters.
     # ====== YOUR CODE: ======
-    n_layers = 4
-    hidden_dims = 15
-    activation = "lrelu"
-    out_activation = "tanh"
+    n_layers = 2
+    hidden_dims = 14
+    activation = "relu"
+    out_activation = "relu"
     # ========================
     return dict(
         n_layers=n_layers,
@@ -181,7 +226,7 @@ def part3_optim_hp():
     #    Loss classes in torch.nn or one of the loss functions from torch.nn.functional.
     # ====== YOUR CODE: ======
     loss_fn = torch.nn.CrossEntropyLoss()
-    lr, weight_decay, momentum = 0.001, 0.0005, 0.9
+    lr, weight_decay, momentum = 0.02, 0.0005,0.9
     # ========================
     return dict(lr=lr, weight_decay=weight_decay, momentum=momentum, loss_fn=loss_fn)
 
@@ -264,6 +309,12 @@ def part4_optim_hp():
 
 part4_q1 = r"""
 **Your answer:**
+1.The number of parameters for a CNN layer is C_in * k * k * C_out, in our case the number of parameters in a regular block is:
+(256*3*3*256)+(256*3*3*256) = 1179648
+The bottleneck block has:
+(256*1*1*64) + (64*3*3*64) + (64*1*1*256) = 69632.
+As we can clearly see the bottleneck has significantly less parameters.
+2.The floating point operations 
 
 
 Write your answer using **markdown** and $\LaTeX$:

@@ -1,3 +1,4 @@
 .ipynb_checkpoints/
 .git/
-hw2/__*
+hw2/__pycache_.*
+.DS_Store

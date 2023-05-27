@@ -363,7 +363,7 @@ class Dropout(Layer):
         # ====== YOUR CODE: ======
         out = x
         if self.training_mode:
-            prbs = torch.distributions.bernoulli.Bernoulli(1-self.p)
+            prbs = torch.distributions.bernoulli.Bernoulli(1-self.p).sample(x.shape)
             prbs = prbs/(1-self.p)
             self.grad_cache["prbs"] = prbs
             out = out * prbs
