@@ -1,6 +1,6 @@
 {
   "config": {
-    "run_name": "exp1_1_L16_K32",
+    "run_name": "exp1_1",
     "out_dir": "./results",
     "seed": 42,
     "device": null,
