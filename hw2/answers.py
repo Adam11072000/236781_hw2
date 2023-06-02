@@ -333,57 +333,42 @@ An equation: $e^{i\pi} -1 = 0$
 
 
 part5_q1 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+we can see that the best results gotten with L = 2. this may be due to the fact that the network is very expressive, thus having more layers will give major overfitting.
+1) theoritically, the deeper the network the more accurate it can become, due to the fact that
+mathematically, the function that the network defines can become more expressive.
+practically, the deeper the network the more overfitting we get, thus we can reach 100% accuracy on the training set but quite a low accuracy on the test set.
+the best results were produced by L = 2, since it is not that deep, thus no overfitting, but not very shallow as to not being expressive.
+2) 8, 16. this was caused because of vanishing/exploding gradients, thus the network was not trainable.
+two things helped, one of them is weight_decay, which prevents exploding gradients, and early stoppings which stops the network from training if no better results on test set, thus preventing vanishing/exploding gradients.
 """
 
 part5_q2 = r"""
-**Your answer:**
+for a non-expressive network (not very deep like L = 2), best results gotten were from K = 128, as these kernels can detect a much bigger overview of the pictures, that can classify better.
+for a mid-expressive netowkr (L = 4), best results were still from K = 128 due to the same reason as above.
+for a very expressive network, L = 8, a small kernel can now get very complex results from smaller features, thus K = 64 gave the best results.
 
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+We can see that the best results where gotten for L = 4, K = 128.
+we got better score than q1 because of the fact that the network could detect more complex patterns.
 
 """
 
 part5_q3 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+the best results were gotten for L = 2, and K = [64, 128]
+combining two kernels with different sizes can help detect very complex patterns in pictures, thus we see that when we deepen the network, we already see overfitting.
 
 """
 
 part5_q4 = r"""
-**Your answer:**
+resnets usually can classify pictures much better than CNNs as we saw in lectures.
+we can see that we got the best results for L=16 AND K=32.
+small difference was gotten for L = 8 and  k = 32, this is because resnets can be trained with deeper networks since they address the problem of vanishing/exploding gradients.
+as for L = 32, we see a very noticable degrading in test score due to the fact of overfitting.
+the training took much more time than CNN's.
 
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+as for varying sizes of Kernels, this could make the network too much expressive as to induce overfitting and get worse results.
+Although theoritically, if hyper parameters are tweaked good enough, with varying number of kernels, the network can get very good results, as we have no
+vanishing/exploding gradients in ResNets.
 """
-
 
 # ==============
 
